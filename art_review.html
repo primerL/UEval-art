@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+
+        .filters {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 12px 16px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+            gap: 30px;
+        }
+
+        .item-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .item-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .item-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .item-id {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .item-type {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .item-content {
+            padding: 25px;
+        }
+
+        .prompt {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .reference-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: "📝";
+            font-size: 1.2rem;
+        }
+
+        .text-ref {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #2c3e50;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .image-item {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .image-item:hover {
+            transform: scale(1.05);
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .image-item:hover .image-overlay {
+            opacity: 1;
+        }
+
+        .model-responses {
+            margin-top: 25px;
+        }
+
+        .model-section {
+            margin-bottom: 20px;
+            border: 2px solid #e0e6ed;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .model-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .model-content {
+            padding: 20px;
+        }
+
+        .model-text {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .model-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .model-image {
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+
+        .model-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .review-section {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .review-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .score-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .score-input input {
+            width: 80px;
+            padding: 8px 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .status-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .status-btn.pending {
+            background: #f39c12;
+            color: white;
+        }
+
+        .status-btn.approved {
+            background: #27ae60;
+            color: white;
+        }
+
+        .status-btn.rejected {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .status-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .comment-box {
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .comment-box textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 90%;
+            max-height: 90%;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .items-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .review-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .status-buttons {
+                justify-content: center;
+            }
+
+            .rubric-tags {
+                justify-content: center;
+            }
+
+            .model-images {
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .items-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .item-content {
+                padding: 20px;
+            }
+
+            .rubrics-content {
+                padding: 15px;
+            }
+
+            .rubric-item {
+                padding: 15px;
+            }
+
+            .images-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e6ed;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .rubrics-section {
+            margin: 20px 0;
+            border: 2px solid #e8f4fd;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+
+        .rubrics-header {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rubrics-content {
+            padding: 20px;
+        }
+
+        .rubric-item {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-left: 5px solid #74b9ff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .rubric-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .rubric-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .rubric-criterion {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .rubric-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .rubric-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid #bbdefb;
+        }
+
+        .rubric-tag.level-example {
+            background: #fff3e0;
+            color: #f57c00;
+            border-color: #ffcc02;
+        }
+
+        .rubric-tag.axis-completeness {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border-color: #a5d6a7;
+        }
+
+        .rubric-tag.axis-accuracy {
+            background: #fce4ec;
+            color: #c2185b;
+            border-color: #f8bbd9;
+        }
+
+        .rubric-tag.axis-clarity {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            border-color: #ce93d8;
+        }
+
+        .model-results {
+            margin-top: 20px;
+            border: 2px solid #e8f4fd;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+
+        .results-header {
+            background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            color: white;
+            padding: 12px 16px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .results-content {
+            padding: 15px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .result-item.passed {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .result-item.failed {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .result-item:hover {
+            transform: translateX(4px);
+        }
+
+        .result-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .result-criterion {
+            line-height: 1.4;
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Art</h1>
+            <div style="margin-top: 20px;">
+                <button onclick="reviewSystem.exportResults()" 
+                        style="background: linear-gradient(135deg, #00b894 0%, #00a085 100%); 
+                               color: white; border: none; padding: 12px 24px; 
+                               border-radius: 25px; font-size: 1rem; font-weight: 600; 
+                               cursor: pointer; box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+                               transition: all 0.3s ease;">
+                    📊 导出审核结果
+                </button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalItems">0</div>
+                <div class="stat-label">总项目数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="approvedItems">0</div>
+                <div class="stat-label">✅ 已通过</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="rejectedItems">0</div>
+                <div class="stat-label">❌ 已拒绝</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingItems">0</div>
+                <div class="stat-label">⏳ 未审核</div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-row">
+                <div class="filter-group search-box">
+                    <label for="searchInput">搜索</label>
+                    <input type="text" id="searchInput" placeholder="搜索提示词、参考文本或模型输出...">
+                </div>
+                <div class="filter-group">
+                    <label for="statusFilter">审核状态</label>
+                    <select id="statusFilter">
+                        <option value="all">全部</option>
+                        <option value="approved">已通过</option>
+                        <option value="rejected">已拒绝</option>
+                        <option value="pending">未审核</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="modelFilter">模型</label>
+                    <select id="modelFilter">
+                        <option value="all">全部模型</option>
+                        <option value="GPT">GPT</option>
+                        <option value="Gemini">Gemini</option>
+                        <option value="Bagel">Bagel</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="sortBy">排序</label>
+                    <select id="sortBy">
+                        <option value="id">按ID排序</option>
+                        <option value="status">按状态排序</option>
+                        <option value="score">按评分排序</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" class="loading">
+            <div>🔄 正在加载数据...</div>
+        </div>
+
+        <div class="items-grid" id="itemsGrid">
+            <!-- 项目卡片将在这里动态生成 -->
+        </div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <div class="modal-content">
+            <img id="modalImage" class="modal-image" src="" alt="">
+        </div>
+    </div>
+
+    <script>
+        class ArtReviewSystem {
+            constructor() {
+                this.data = [];
+                this.filteredData = [];
+                this.reviewData = this.loadReviewData();
+                this.currentFilter = {
+                    search: '',
+                    status: 'all',
+                    model: 'all',
+                    sort: 'id'
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.loadData();
+            }
+
+            setupEventListeners() {
+                // 搜索框
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    this.currentFilter.search = e.target.value;
+                    this.applyFilters();
+                });
+
+                // 状态筛选
+                document.getElementById('statusFilter').addEventListener('change', (e) => {
+                    this.currentFilter.status = e.target.value;
+                    this.applyFilters();
+                });
+
+                // 模型筛选
+                document.getElementById('modelFilter').addEventListener('change', (e) => {
+                    this.currentFilter.model = e.target.value;
+                    this.applyFilters();
+                });
+
+                // 排序
+                document.getElementById('sortBy').addEventListener('change', (e) => {
+                    this.currentFilter.sort = e.target.value;
+                    this.applyFilters();
+                });
+
+                // 模态框关闭
+                document.querySelector('.close').addEventListener('click', () => {
+                    this.closeModal();
+                });
+
+                document.getElementById('imageModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'imageModal') {
+                        this.closeModal();
+                    }
+                });
+            }
+
+            async loadData() {
+                try {
+                    console.log('开始加载数据...');
+                    const response = await fetch('merged_art_data.json');
+                    console.log('响应状态:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('数据加载成功，项目数量:', data.length);
+                    
+                    // 验证数据格式
+                    if (!Array.isArray(data)) {
+                        throw new Error('数据格式错误：期望数组格式');
+                    }
+                    
+                    if (data.length === 0) {
+                        throw new Error('数据为空');
+                    }
+                    
+                    // 检查第一个项目的必要字段
+                    const firstItem = data[0];
+                    if (!firstItem.id || !firstItem.prompt) {
+                        throw new Error('数据格式错误：缺少必要字段');
+                    }
+                    
+                    this.data = data;
+                    this.filteredData = [...this.data];
+                    this.renderItems();
+                    this.updateStats();
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                } catch (error) {
+                    console.error('加载数据失败:', error);
+                    document.getElementById('loadingIndicator').innerHTML = 
+                        '<div style="color: #e74c3c;">❌ 数据加载失败: ' + error.message + '</div>';
+                }
+            }
+
+            applyFilters() {
+                this.filteredData = this.data.filter(item => {
+                    // 搜索筛选
+                    if (this.currentFilter.search) {
+                        const searchTerm = this.currentFilter.search.toLowerCase();
+                        const searchableText = [
+                            item.prompt,
+                            item.text_ref,
+                            item.GPT_text,
+                            item.Gemini_text,
+                            item.Bagel_text
+                        ].join(' ').toLowerCase();
+                        
+                        if (!searchableText.includes(searchTerm)) {
+                            return false;
+                        }
+                    }
+
+                    // 状态筛选
+                    if (this.currentFilter.status !== 'all') {
+                        const reviewItem = this.reviewData[item.id];
+                        const status = reviewItem ? reviewItem.status : 'pending';
+                        if (status !== this.currentFilter.status) {
+                            return false;
+                        }
+                    }
+
+                    // 模型筛选
+                    if (this.currentFilter.model !== 'all') {
+                        const hasModelData = item[`${this.currentFilter.model}_text`] || 
+                                           item[`${this.currentFilter.model}_image`];
+                        if (!hasModelData) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                // 排序
+                this.filteredData.sort((a, b) => {
+                    switch (this.currentFilter.sort) {
+                        case 'id':
+                            return parseInt(a.id) - parseInt(b.id);
+                        case 'status':
+                            const statusA = this.reviewData[a.id]?.status || 'pending';
+                            const statusB = this.reviewData[b.id]?.status || 'pending';
+                            return statusA.localeCompare(statusB);
+                        case 'score':
+                            const scoreA = this.reviewData[a.id]?.score || 0;
+                            const scoreB = this.reviewData[b.id]?.score || 0;
+                            return scoreB - scoreA;
+                        default:
+                            return 0;
+                    }
+                });
+
+                this.renderItems();
+                this.updateStats();
+            }
+
+            renderItems() {
+                const grid = document.getElementById('itemsGrid');
+                grid.innerHTML = '';
+
+                this.filteredData.forEach(item => {
+                    const card = this.createItemCard(item);
+                    grid.appendChild(card);
+                });
+            }
+
+            createItemCard(item) {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                
+                const reviewItem = this.reviewData[item.id] || { status: 'pending', score: 0, comment: '' };
+                
+                card.innerHTML = `
+                    <div class="item-header">
+                        <div class="item-id">项目 #${item.id}</div>
+                        <div class="item-type">${item.task_type}</div>
+                    </div>
+                    <div class="item-content">
+                        <div class="prompt">${item.prompt}</div>
+                        
+                        <div class="reference-section">
+                            <div class="section-title">参考文本</div>
+                            <div class="text-ref">${item.text_ref}</div>
+                        </div>
+
+                        ${item.image_ref && item.image_ref.length > 0 ? `
+                            <div class="reference-section">
+                                <div class="section-title">参考图片</div>
+                                <div class="images-grid">
+                                    ${item.image_ref.map((img, index) => `
+                                        <div class="image-item" onclick="reviewSystem.showImage('${img}')">
+                                            <img src="${img}" alt="参考图片 ${index + 1}" loading="lazy">
+                                            <div class="image-overlay">查看大图</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${this.renderRubrics(item.text_rubrics, '文本评分标准')}
+                        ${this.renderRubrics(item.image_rubrics, '图像评分标准')}
+
+                        <div class="model-responses">
+                            ${this.renderModelSection('GPT', item.GPT_text, item.GPT_image, item.GPT_text_result, item.GPT_image_result)}
+                            ${this.renderModelSection('Gemini', item.Gemini_text, item.Gemini_image, item.Gemini_text_result, item.Gemini_image_result)}
+                            ${this.renderModelSection('Bagel', item.Bagel_text, item.Bagel_image, item.Bagel_text_result, item.Bagel_image_result)}
+                        </div>
+
+                        <div class="review-section">
+                            <div class="review-controls">
+                                <div class="score-input">
+                                    <label>评分:</label>
+                                    <input type="number" min="0" max="10" step="0.1" 
+                                           value="${reviewItem.score}" 
+                                           onchange="reviewSystem.updateScore('${item.id}', this.value)">
+                                </div>
+                                <div class="status-buttons">
+                                    <button class="status-btn approved ${reviewItem.status === 'approved' ? 'active' : ''}" 
+                                            onclick="reviewSystem.updateStatus('${item.id}', 'approved')">
+                                        ✅ 通过
+                                    </button>
+                                    <button class="status-btn rejected ${reviewItem.status === 'rejected' ? 'active' : ''}" 
+                                            onclick="reviewSystem.updateStatus('${item.id}', 'rejected')">
+                                        ❌ 拒绝
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="comment-box">
+                                <textarea placeholder="添加审核评论..." 
+                                          onchange="reviewSystem.updateComment('${item.id}', this.value)">${reviewItem.comment}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            renderModelSection(modelName, textData, imageData, textResult, imageResult) {
+                if (!textData && !imageData) return '';
+
+                // 处理图像数据格式不一致的问题
+                let images = [];
+                if (imageData) {
+                    if (Array.isArray(imageData)) {
+                        images = imageData;
+                    } else if (typeof imageData === 'string') {
+                        images = [imageData];
+                    }
+                }
+
+                return `
+                    <div class="model-section">
+                        <div class="model-header">
+                            <span>🤖 ${modelName}</span>
+                        </div>
+                        <div class="model-content">
+                            ${textData ? `<div class="model-text">${textData}</div>` : ''}
+                            ${images.length > 0 ? `
+                                <div class="model-images">
+                                    ${images.map((img, index) => `
+                                        <div class="model-image">
+                                            <img src="${img}" alt="${modelName} 输出图片 ${index + 1}" loading="lazy">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${this.renderModelResults(textResult, imageResult)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderModelResults(textResult, imageResult) {
+                let resultsHtml = '';
+                
+                if (textResult && textResult.length > 0) {
+                    resultsHtml += `
+                        <div class="model-results">
+                            <div class="results-header">📊 文本评分结果</div>
+                            <div class="results-content">
+                                ${textResult.map(result => `
+                                    <div class="result-item ${result.criteria_met ? 'passed' : 'failed'}">
+                                        <span class="result-icon">${result.criteria_met ? '✅' : '❌'}</span>
+                                        <span class="result-criterion">${result.criterion}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (imageResult && imageResult.length > 0) {
+                    resultsHtml += `
+                        <div class="model-results">
+                            <div class="results-header">📊 图像评分结果</div>
+                            <div class="results-content">
+                                ${imageResult.map(result => `
+                                    <div class="result-item ${result.criteria_met ? 'passed' : 'failed'}">
+                                        <span class="result-icon">${result.criteria_met ? '✅' : '❌'}</span>
+                                        <span class="result-criterion">${result.criterion}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                return resultsHtml;
+            }
+
+            renderRubrics(rubrics, title) {
+                if (!rubrics || rubrics.length === 0) return '';
+
+                return `
+                    <div class="rubrics-section">
+                        <div class="rubrics-header">
+                            <span>📋 ${title}</span>
+                        </div>
+                        <div class="rubrics-content">
+                            ${rubrics.map(rubric => `
+                                <div class="rubric-item">
+                                    <div class="rubric-criterion">${rubric.criterion}</div>
+                                    <div class="rubric-tags">
+                                        ${rubric.tags ? rubric.tags.map(tag => `
+                                            <span class="rubric-tag ${tag.replace(':', '-')}">${tag}</span>
+                                        `).join('') : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            showImage(imageSrc) {
+                const modal = document.getElementById('imageModal');
+                const modalImg = document.getElementById('modalImage');
+                modalImg.src = imageSrc;
+                modal.style.display = 'block';
+            }
+
+            closeModal() {
+                document.getElementById('imageModal').style.display = 'none';
+            }
+
+            updateScore(itemId, score) {
+                if (!this.reviewData[itemId]) {
+                    this.reviewData[itemId] = { status: 'pending', score: 0, comment: '' };
+                }
+                this.reviewData[itemId].score = parseFloat(score);
+                this.saveReviewData();
+                this.updateStats();
+            }
+
+            updateStatus(itemId, status) {
+                if (!this.reviewData[itemId]) {
+                    this.reviewData[itemId] = { status: 'pending', score: 0, comment: '' };
+                }
+                this.reviewData[itemId].status = status;
+                this.saveReviewData();
+                this.updateStats();
+                this.renderItems(); // 重新渲染以更新按钮状态
+            }
+
+            updateComment(itemId, comment) {
+                if (!this.reviewData[itemId]) {
+                    this.reviewData[itemId] = { status: 'pending', score: 0, comment: '' };
+                }
+                this.reviewData[itemId].comment = comment;
+                this.saveReviewData();
+            }
+
+            updateStats() {
+                const total = this.data.length;
+                const approved = Object.values(this.reviewData).filter(item => item.status === 'approved').length;
+                const rejected = Object.values(this.reviewData).filter(item => item.status === 'rejected').length;
+                const pending = total - approved - rejected;
+                const progress = total > 0 ? ((approved + rejected) / total) * 100 : 0;
+
+                document.getElementById('totalItems').textContent = total;
+                document.getElementById('approvedItems').textContent = approved;
+                document.getElementById('rejectedItems').textContent = rejected;
+                document.getElementById('pendingItems').textContent = pending;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+            }
+
+            loadReviewData() {
+                const saved = localStorage.getItem('artReviewData');
+                return saved ? JSON.parse(saved) : {};
+            }
+
+            saveReviewData() {
+                localStorage.setItem('artReviewData', JSON.stringify(this.reviewData));
+            }
+
+            exportResults() {
+                // 准备导出数据
+                const exportData = {
+                    exportTime: new Date().toISOString(),
+                    totalItems: this.data.length,
+                    statistics: {
+                        approved: Object.values(this.reviewData).filter(item => item.status === 'approved').length,
+                        rejected: Object.values(this.reviewData).filter(item => item.status === 'rejected').length,
+                        pending: this.data.length - Object.values(this.reviewData).filter(item => item.status === 'approved').length - Object.values(this.reviewData).filter(item => item.status === 'rejected').length
+                    },
+                    reviews: []
+                };
+
+                // 为每个项目添加审核结果
+                this.data.forEach(item => {
+                    const reviewItem = this.reviewData[item.id] || { status: 'pending', score: 0, comment: '' };
+                    exportData.reviews.push({
+                        id: item.id,
+                        prompt: item.prompt,
+                        status: reviewItem.status,
+                        score: reviewItem.score,
+                        comment: reviewItem.comment,
+                        reviewTime: new Date().toISOString()
+                    });
+                });
+
+                // 创建并下载文件
+                const dataStr = JSON.stringify(exportData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `art_review_results_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                // 同时导出CSV格式
+                this.exportCSV(exportData);
+            }
+
+            exportCSV(data) {
+                const csvHeaders = ['ID', '状态', '评分', '评论', '提示词'];
+                const csvRows = [csvHeaders.join(',')];
+
+                data.reviews.forEach(review => {
+                    const row = [
+                        review.id,
+                        review.status,
+                        review.score,
+                        `"${review.comment.replace(/"/g, '""')}"`, // 转义引号
+                        `"${review.prompt.replace(/"/g, '""')}"`   // 转义引号
+                    ];
+                    csvRows.push(row.join(','));
+                });
+
+                const csvContent = csvRows.join('\n');
+                const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const csvUrl = URL.createObjectURL(csvBlob);
+                
+                const csvLink = document.createElement('a');
+                csvLink.href = csvUrl;
+                csvLink.download = `art_review_results_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(csvLink);
+                csvLink.click();
+                document.body.removeChild(csvLink);
+                URL.revokeObjectURL(csvUrl);
+            }
+        }
+
+        // 初始化审核系统
+        const reviewSystem = new ArtReviewSystem();
+    </script>
+</body>
+</html>
