@@ -127,23 +127,25 @@
         }
 
         .items-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
-            gap: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            max-width: 100%;
         }
 
         .item-card {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
+            border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             position: relative;
+            width: 100%;
         }
 
         .item-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
         }
 
         .item-header {
@@ -167,19 +169,19 @@
         }
 
         .item-content {
-            padding: 25px;
+            padding: 20px;
         }
 
         .prompt {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 20px;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
             color: #2c3e50;
             font-weight: 500;
         }
 
         .reference-section {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .section-title {
@@ -317,7 +319,37 @@
             display: flex;
             gap: 15px;
             align-items: center;
-            flex-wrap: wrap;
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .current-status {
+            margin-left: auto;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .current-status.pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .current-status.approved {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .current-status.rejected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         .score-input {
@@ -457,13 +489,18 @@
             }
 
             .items-grid {
-                grid-template-columns: 1fr;
                 gap: 20px;
             }
 
             .review-controls {
                 flex-direction: column;
                 align-items: stretch;
+            }
+
+            .current-status {
+                margin-left: 0;
+                margin-top: 10px;
+                align-self: center;
             }
 
             .status-buttons {
@@ -670,6 +707,65 @@
             line-height: 1.4;
             flex: 1;
         }
+
+        /* 图片查看大图功能 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            cursor: pointer;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90%;
+            object-fit: contain;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #bbb;
+        }
+
+        .image-clickable {
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-clickable:hover {
+            opacity: 0.8;
+        }
+
+        .bottom-export {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -753,14 +849,24 @@
         <div class="items-grid" id="itemsGrid">
             <!-- 项目卡片将在这里动态生成 -->
         </div>
+
+        <!-- 底部导出按钮 -->
+        <div class="bottom-export">
+            <button onclick="reviewSystem.exportResults()" 
+                    style="background: linear-gradient(135deg, #00b894 0%, #00a085 100%); 
+                           color: white; border: none; padding: 12px 24px; 
+                           border-radius: 25px; font-size: 1rem; font-weight: 600; 
+                           cursor: pointer; box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+                           transition: all 0.3s ease;">
+                📊 导出所有审核结果
+            </button>
+        </div>
     </div>
 
-    <!-- 图片预览模态框 -->
-    <div id="imageModal" class="modal">
-        <span class="close">&times;</span>
-        <div class="modal-content">
-            <img id="modalImage" class="modal-image" src="" alt="">
-        </div>
+    <!-- 图片查看大图模态框 -->
+    <div id="imageModal" class="image-modal" onclick="closeModal()">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
     </div>
 
     <script>
@@ -956,8 +1062,8 @@
                                 <div class="section-title">参考图片</div>
                                 <div class="images-grid">
                                     ${item.image_ref.map((img, index) => `
-                                        <div class="image-item" onclick="reviewSystem.showImage('${img}')">
-                                            <img src="${img}" alt="参考图片 ${index + 1}" loading="lazy">
+                                        <div class="image-item">
+                                            <img src="${img}" alt="参考图片 ${index + 1}" class="image-clickable" onclick="openModal('${img}')" loading="lazy">
                                             <div class="image-overlay">查看大图</div>
                                         </div>
                                     `).join('')}
@@ -974,28 +1080,15 @@
                             ${this.renderModelSection('Bagel', item.Bagel_text, item.Bagel_image, item.Bagel_text_result, item.Bagel_image_result)}
                         </div>
 
-                        <div class="review-section">
-                            <div class="review-controls">
-                                <div class="score-input">
-                                    <label>评分:</label>
-                                    <input type="number" min="0" max="10" step="0.1" 
-                                           value="${reviewItem.score}" 
-                                           onchange="reviewSystem.updateScore('${item.id}', this.value)">
-                                </div>
-                                <div class="status-buttons">
-                                    <button class="status-btn approved ${reviewItem.status === 'approved' ? 'active' : ''}" 
-                                            onclick="reviewSystem.updateStatus('${item.id}', 'approved')">
-                                        ✅ 通过
-                                    </button>
-                                    <button class="status-btn rejected ${reviewItem.status === 'rejected' ? 'active' : ''}" 
-                                            onclick="reviewSystem.updateStatus('${item.id}', 'rejected')">
-                                        ❌ 拒绝
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="comment-box">
-                                <textarea placeholder="添加审核评论..." 
-                                          onchange="reviewSystem.updateComment('${item.id}', this.value)">${reviewItem.comment}</textarea>
+                        <div class="review-controls">
+                            <button class="status-btn approved" onclick="reviewSystem.approveItem('${item.id}')">
+                                ✅ 通过
+                            </button>
+                            <button class="status-btn rejected" onclick="reviewSystem.rejectItem('${item.id}')">
+                                ❌ 拒绝
+                            </button>
+                            <div class="current-status" id="status-${item.id}">
+                                ${this.getStatusDisplay(item.id)}
                             </div>
                         </div>
                     </div>
@@ -1028,7 +1121,7 @@
                                 <div class="model-images">
                                     ${images.map((img, index) => `
                                         <div class="model-image">
-                                            <img src="${img}" alt="${modelName} 输出图片 ${index + 1}" loading="lazy">
+                                            <img src="${img}" alt="${modelName} 输出图片 ${index + 1}" class="image-clickable" onclick="openModal('${img}')" loading="lazy">
                                         </div>
                                     `).join('')}
                                 </div>
@@ -1102,6 +1195,24 @@
                 `;
             }
 
+            getReviewStatus(itemId) {
+                const review = this.reviewData[itemId];
+                if (!review) return 'pending';
+                if (review.status === 'approved') return 'approved';
+                if (review.status === 'rejected') return 'rejected';
+                return 'pending';
+            }
+
+            getStatusDisplay(itemId) {
+                const status = this.getReviewStatus(itemId);
+                const statusText = {
+                    'pending': '⏳ 待审核',
+                    'approved': '✅ 已通过',
+                    'rejected': '❌ 已拒绝'
+                }[status];
+                return `<span class="current-status ${status}">${statusText}</span>`;
+            }
+
             showImage(imageSrc) {
                 const modal = document.getElementById('imageModal');
                 const modalImg = document.getElementById('modalImage');
@@ -1122,22 +1233,31 @@
                 this.updateStats();
             }
 
-            updateStatus(itemId, status) {
+            approveItem(itemId) {
                 if (!this.reviewData[itemId]) {
                     this.reviewData[itemId] = { status: 'pending', score: 0, comment: '' };
                 }
-                this.reviewData[itemId].status = status;
+                this.reviewData[itemId].status = 'approved';
                 this.saveReviewData();
+                this.updateItemStatus(itemId);
                 this.updateStats();
-                this.renderItems(); // 重新渲染以更新按钮状态
             }
 
-            updateComment(itemId, comment) {
+            rejectItem(itemId) {
                 if (!this.reviewData[itemId]) {
                     this.reviewData[itemId] = { status: 'pending', score: 0, comment: '' };
                 }
-                this.reviewData[itemId].comment = comment;
+                this.reviewData[itemId].status = 'rejected';
                 this.saveReviewData();
+                this.updateItemStatus(itemId);
+                this.updateStats();
+            }
+
+            updateItemStatus(itemId) {
+                const statusElement = document.getElementById(`status-${itemId}`);
+                if (statusElement) {
+                    statusElement.innerHTML = this.getStatusDisplay(itemId);
+                }
             }
 
             updateStats() {
@@ -1237,6 +1357,26 @@
 
         // 初始化审核系统
         const reviewSystem = new ArtReviewSystem();
+
+        // 图片查看大图功能
+        function openModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'block';
+            modalImg.src = imageSrc;
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+        }
+
+        // 按ESC键关闭模态框
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
     </script>
 </body>
 </html>
