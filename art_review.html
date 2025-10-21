@@ -1134,7 +1134,7 @@
                                 <div class="rubric-item">
                                     <div class="rubric-criterion markdown-content">${this.renderMarkdown(rubric.criterion)}</div>
                                     <div class="rubric-tags">
-                                        ${rubric.tags ? rubric.tags.map(tag => `<span class="rubric-tag">${tag}</span>`).join('') : ''}
+                                        ${rubric.tags && Array.isArray(rubric.tags) ? rubric.tags.map(tag => `<span class="rubric-tag">${tag}</span>`).join('') : ''}
                                     </div>
                                 </div>
                             `).join('')}
@@ -1151,7 +1151,7 @@
                                 <div class="rubric-item">
                                     <div class="rubric-criterion markdown-content">${this.renderMarkdown(rubric.criterion)}</div>
                                     <div class="rubric-tags">
-                                        ${rubric.tags ? rubric.tags.map(tag => `<span class="rubric-tag">${tag}</span>`).join('') : ''}
+                                        ${rubric.tags && Array.isArray(rubric.tags) ? rubric.tags.map(tag => `<span class="rubric-tag">${tag}</span>`).join('') : ''}
                                     </div>
                                 </div>
                             `).join('')}
