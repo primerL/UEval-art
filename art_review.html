@@ -1108,9 +1108,9 @@
                     html += `
                         <div class="reference-section">
                             <div class="section-title">参考图片</div>
-                            <div class="reference-images">
+                            <div class="reference-images images-grid">
                                 ${item.image_ref.map(img => `
-                                    <div class="reference-image">
+                                    <div class="reference-image image-item">
                                         <img src="${img}" alt="参考图片" class="image-clickable" onclick="openModal('${img}')" onerror="this.style.display='none'">
                                     </div>
                                 `).join('')}
