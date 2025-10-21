@@ -893,70 +893,55 @@
             </div>
         </div>
 
-        <div class="stats">
+        <div class="stats" id="stats">
             <div class="stat-card">
-                <div class="stat-number" id="totalItems">0</div>
+                <div class="stat-number" id="total-count">0</div>
                 <div class="stat-label">总项目数</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="approvedItems">0</div>
-                <div class="stat-label">✅ 已通过</div>
+                <div class="stat-number" id="pending-count">0</div>
+                <div class="stat-label">待审核</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="rejectedItems">0</div>
-                <div class="stat-label">❌ 已拒绝</div>
+                <div class="stat-number" id="approved-count">0</div>
+                <div class="stat-label">已通过</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="pendingItems">0</div>
-                <div class="stat-label">⏳ 未审核</div>
+                <div class="stat-number" id="rejected-count">0</div>
+                <div class="stat-label">已拒绝</div>
             </div>
         </div>
 
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-        </div>
 
-        <div class="filters">
+        <div class="controls">
             <div class="filter-row">
-                <div class="filter-group search-box">
-                    <label for="searchInput">搜索</label>
-                    <input type="text" id="searchInput" placeholder="搜索提示词、参考文本或模型输出...">
-                </div>
                 <div class="filter-group">
-                    <label for="statusFilter">审核状态</label>
-                    <select id="statusFilter">
+                    <label>状态筛选:</label>
+                    <select id="status-filter">
                         <option value="all">全部</option>
+                        <option value="pending">待审核</option>
                         <option value="approved">已通过</option>
                         <option value="rejected">已拒绝</option>
-                        <option value="pending">未审核</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label for="modelFilter">模型</label>
-                    <select id="modelFilter">
-                        <option value="all">全部模型</option>
-                        <option value="GPT">GPT</option>
-                        <option value="Gemini">Gemini</option>
-                        <option value="Bagel">Bagel</option>
+                    <label>任务类型:</label>
+                    <select id="task-filter">
+                        <option value="all">全部</option>
+                        <option value="art">艺术创作</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label for="sortBy">排序</label>
-                    <select id="sortBy">
-                        <option value="id">按ID排序</option>
-                        <option value="status">按状态排序</option>
-                        <option value="score">按评分排序</option>
-                    </select>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="搜索提示内容..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem;">
                 </div>
             </div>
+            <button class="btn btn-export" onclick="reviewSystem.exportResults()">
+                📊 导出审核结果
+            </button>
         </div>
 
-        <div id="loadingIndicator" class="loading">
-            <div>🔄 正在加载数据...</div>
-        </div>
-
-        <div class="items-grid" id="itemsGrid">
-            <!-- 项目卡片将在这里动态生成 -->
+        <div id="items-container">
+            <div class="loading">正在加载数据...</div>
         </div>
 
         <!-- 底部导出按钮 -->
@@ -983,13 +968,8 @@
             constructor() {
                 this.data = [];
                 this.filteredData = [];
-                this.reviewData = this.loadReviewData();
-                this.currentFilter = {
-                    search: '',
-                    status: 'all',
-                    model: 'all',
-                    sort: 'id'
-                };
+                this.reviews = this.loadReviews();
+                this.init();
             }
 
             // 渲染Markdown内容
@@ -1002,147 +982,59 @@
                     return text; // 如果渲染失败，返回原始文本
                 }
             }
-                
-                this.init();
-            }
 
-            init() {
+            async init() {
+                await this.loadData();
                 this.setupEventListeners();
-                this.loadData();
+                this.renderItems();
+                this.updateStats();
             }
 
             setupEventListeners() {
-                // 搜索框
-                document.getElementById('searchInput').addEventListener('input', (e) => {
-                    this.currentFilter.search = e.target.value;
-                    this.applyFilters();
-                });
-
-                // 状态筛选
-                document.getElementById('statusFilter').addEventListener('change', (e) => {
-                    this.currentFilter.status = e.target.value;
-                    this.applyFilters();
-                });
-
-                // 模型筛选
-                document.getElementById('modelFilter').addEventListener('change', (e) => {
-                    this.currentFilter.model = e.target.value;
-                    this.applyFilters();
-                });
-
-                // 排序
-                document.getElementById('sortBy').addEventListener('change', (e) => {
-                    this.currentFilter.sort = e.target.value;
-                    this.applyFilters();
-                });
-
-                // 模态框关闭
-                document.querySelector('.close').addEventListener('click', () => {
-                    this.closeModal();
-                });
-
-                document.getElementById('imageModal').addEventListener('click', (e) => {
-                    if (e.target.id === 'imageModal') {
-                        this.closeModal();
-                    }
-                });
+                document.getElementById('status-filter').addEventListener('change', () => this.filterItems());
+                document.getElementById('task-filter').addEventListener('change', () => this.filterItems());
+                document.getElementById('search-input').addEventListener('input', () => this.filterItems());
             }
 
             async loadData() {
                 try {
-                    console.log('开始加载数据...');
                     const response = await fetch('merged_art_data.json');
-                    console.log('响应状态:', response.status);
-                    
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                    const jsonData = await response.json();
                     
-                    const data = await response.json();
-                    console.log('数据加载成功，项目数量:', data.length);
-                    
-                    // 验证数据格式
-                    if (!Array.isArray(data)) {
+                    if (!Array.isArray(jsonData)) {
                         throw new Error('数据格式错误：期望数组格式');
                     }
                     
-                    if (data.length === 0) {
-                        throw new Error('数据为空');
-                    }
-                    
-                    // 检查第一个项目的必要字段
-                    const firstItem = data[0];
-                    if (!firstItem.id || !firstItem.prompt) {
-                        throw new Error('数据格式错误：缺少必要字段');
-                    }
-                    
-                    this.data = data;
+                    this.data = jsonData;
                     this.filteredData = [...this.data];
-                    this.renderItems();
-                    this.updateStats();
-                    document.getElementById('loadingIndicator').style.display = 'none';
+                    console.log(`成功加载 ${this.data.length} 条art数据`);
                 } catch (error) {
                     console.error('加载数据失败:', error);
-                    document.getElementById('loadingIndicator').innerHTML = 
-                        '<div style="color: #e74c3c;">❌ 数据加载失败: ' + error.message + '</div>';
+                    this.showError(`数据加载失败: ${error.message}`);
                 }
             }
 
-            applyFilters() {
+            showError(message) {
+                const container = document.getElementById('items-container');
+                container.innerHTML = `<div class="error">${message}</div>`;
+            }
+
+            filterItems() {
+                const statusFilter = document.getElementById('status-filter').value;
+                const taskFilter = document.getElementById('task-filter').value;
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
                 this.filteredData = this.data.filter(item => {
-                    // 搜索筛选
-                    if (this.currentFilter.search) {
-                        const searchTerm = this.currentFilter.search.toLowerCase();
-                        const searchableText = [
-                            item.prompt,
-                            item.text_ref,
-                            item.GPT_text,
-                            item.Gemini_text,
-                            item.Bagel_text
-                        ].join(' ').toLowerCase();
-                        
-                        if (!searchableText.includes(searchTerm)) {
-                            return false;
-                        }
-                    }
+                    const statusMatch = statusFilter === 'all' || this.getReviewStatus(item.id) === statusFilter;
+                    const taskMatch = taskFilter === 'all' || item.task_type === taskFilter;
+                    const searchMatch = searchTerm === '' || 
+                        item.prompt.toLowerCase().includes(searchTerm) ||
+                        (item.text_ref && item.text_ref.toLowerCase().includes(searchTerm));
 
-                    // 状态筛选
-                    if (this.currentFilter.status !== 'all') {
-                        const reviewItem = this.reviewData[item.id];
-                        const status = reviewItem ? reviewItem.status : 'pending';
-                        if (status !== this.currentFilter.status) {
-                            return false;
-                        }
-                    }
-
-                    // 模型筛选
-                    if (this.currentFilter.model !== 'all') {
-                        const hasModelData = item[`${this.currentFilter.model}_text`] || 
-                                           item[`${this.currentFilter.model}_image`];
-                        if (!hasModelData) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                });
-
-                // 排序
-                this.filteredData.sort((a, b) => {
-                    switch (this.currentFilter.sort) {
-                        case 'id':
-                            return parseInt(a.id) - parseInt(b.id);
-                        case 'status':
-                            const statusA = this.reviewData[a.id]?.status || 'pending';
-                            const statusB = this.reviewData[b.id]?.status || 'pending';
-                            return statusA.localeCompare(statusB);
-                        case 'score':
-                            const scoreA = this.reviewData[a.id]?.score || 0;
-                            const scoreB = this.reviewData[b.id]?.score || 0;
-                            return scoreB - scoreA;
-                        default:
-                            return 0;
-                    }
+                    return statusMatch && taskMatch && searchMatch;
                 });
 
                 this.renderItems();
@@ -1150,62 +1042,46 @@
             }
 
             renderItems() {
-                const grid = document.getElementById('itemsGrid');
-                grid.innerHTML = '';
+                const container = document.getElementById('items-container');
+                
+                if (this.filteredData.length === 0) {
+                    container.innerHTML = '<div class="loading">没有找到匹配的项目</div>';
+                    return;
+                }
 
-                this.filteredData.forEach(item => {
-                    const card = this.createItemCard(item);
-                    grid.appendChild(card);
-                });
+                container.innerHTML = this.filteredData.map(item => this.createItemCard(item)).join('');
             }
 
             createItemCard(item) {
-                const card = document.createElement('div');
-                card.className = 'item-card';
-                
-                const reviewItem = this.reviewData[item.id] || { status: 'pending', score: 0, comment: '' };
-                
-                card.innerHTML = `
-                    <div class="item-header">
-                        <div class="item-id">项目 #${item.id}</div>
-                        <div class="item-type">${item.task_type}</div>
-                    </div>
-                    <div class="item-content">
-                        <div class="prompt markdown-content">${this.renderMarkdown(item.prompt)}</div>
-                        
-                        <div class="reference-section">
-                            <div class="section-title">参考文本</div>
-                            <div class="text-ref markdown-content">${this.renderMarkdown(item.text_ref)}</div>
+                const status = this.getReviewStatus(item.id);
+                const statusClass = `status-${status}`;
+                const statusText = {
+                    'pending': '待审核',
+                    'approved': '已通过',
+                    'rejected': '已拒绝'
+                }[status];
+
+                return `
+                    <div class="item-card">
+                        <div class="item-header">
+                            <div class="item-id">项目 #${item.id}</div>
+                            <div class="item-type">${item.task_type}</div>
+                            <div class="status-badge ${statusClass}" style="margin-left: auto;">${statusText}</div>
                         </div>
-
-                        ${item.image_ref && item.image_ref.length > 0 ? `
-                            <div class="reference-section">
-                                <div class="section-title">参考图片</div>
-                                <div class="images-grid">
-                                    ${item.image_ref.map((img, index) => `
-                                        <div class="image-item">
-                                            <img src="${img}" alt="参考图片 ${index + 1}" class="image-clickable" onclick="openModal('${img}')" loading="lazy">
-                                            <div class="image-overlay">查看大图</div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        ${this.renderRubrics(item.text_rubrics, '文本评分标准')}
-                        ${this.renderRubrics(item.image_rubrics, '图像评分标准')}
-
-                        <div class="model-responses">
-                            ${this.renderModelSection('GPT', item.GPT_text, item.GPT_image, item.GPT_text_result, item.GPT_image_result)}
-                            ${this.renderModelSection('Gemini', item.Gemini_text, item.Gemini_image, item.Gemini_text_result, item.Gemini_image_result)}
-                            ${this.renderModelSection('Bagel', item.Bagel_text, item.Bagel_image, item.Bagel_text_result, item.Bagel_image_result)}
+                        <div class="item-content">
+                            <div class="prompt markdown-content">${this.renderMarkdown(item.prompt)}</div>
+                            
+                            ${this.renderReferenceSection(item)}
+                            ${this.renderRubrics(item)}
+                            ${this.renderModelSection(item, 'GPT', item.GPT_text, item.GPT_image, item.GPT_text_result, item.GPT_image_result)}
+                            ${this.renderModelSection(item, 'Gemini', item.Gemini_text, item.Gemini_image, item.Gemini_text_result, item.Gemini_image_result)}
+                            ${this.renderModelSection(item, 'Bagel', item.Bagel_text, item.Bagel_image, item.Bagel_text_result, item.Bagel_image_result)}
                         </div>
-
                         <div class="review-controls">
-                            <button class="status-btn approved" onclick="reviewSystem.approveItem('${item.id}')">
+                            <button class="btn btn-approve" onclick="reviewSystem.approveItem('${item.id}')">
                                 ✅ 通过
                             </button>
-                            <button class="status-btn rejected" onclick="reviewSystem.rejectItem('${item.id}')">
+                            <button class="btn btn-reject" onclick="reviewSystem.rejectItem('${item.id}')">
                                 ❌ 拒绝
                             </button>
                             <div class="current-status" id="status-${item.id}">
@@ -1214,82 +1090,139 @@
                         </div>
                     </div>
                 `;
-
-                return card;
             }
 
-            renderModelSection(modelName, textData, imageData, textResult, imageResult) {
-                if (!textData && !imageData) return '';
+            renderReferenceSection(item) {
+                let html = '';
+                
+                if (item.text_ref) {
+                    html += `
+                        <div class="reference-section">
+                            <div class="section-title">参考文本</div>
+                            <div class="reference-text markdown-content">${this.renderMarkdown(item.text_ref)}</div>
+                        </div>
+                    `;
+                }
 
-                // 处理图像数据格式不一致的问题
-                let images = [];
-                if (imageData) {
-                    if (Array.isArray(imageData)) {
-                        images = imageData;
-                    } else if (typeof imageData === 'string') {
-                        images = [imageData];
-                    }
+                if (item.image_ref && item.image_ref.length > 0) {
+                    html += `
+                        <div class="reference-section">
+                            <div class="section-title">参考图片</div>
+                            <div class="reference-images">
+                                ${item.image_ref.map(img => `
+                                    <div class="reference-image">
+                                        <img src="${img}" alt="参考图片" class="image-clickable" onclick="openModal('${img}')" onerror="this.style.display='none'">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return html;
+            }
+
+            renderRubrics(item) {
+                let html = '';
+                
+                // 渲染文本rubrics
+                if (item.text_rubrics && item.text_rubrics.length > 0) {
+                    html += `
+                        <div class="rubrics-section">
+                            <div class="rubrics-header">文本评估标准</div>
+                            ${item.text_rubrics.map(rubric => `
+                                <div class="rubric-item">
+                                    <div class="rubric-criterion markdown-content">${this.renderMarkdown(rubric.criterion)}</div>
+                                    <div class="rubric-tags">
+                                        ${rubric.tags ? rubric.tags.map(tag => `<span class="rubric-tag">${tag}</span>`).join('') : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // 渲染图像rubrics
+                if (item.image_rubrics && item.image_rubrics.length > 0) {
+                    html += `
+                        <div class="rubrics-section">
+                            <div class="rubrics-header">图像评估标准</div>
+                            ${item.image_rubrics.map(rubric => `
+                                <div class="rubric-item">
+                                    <div class="rubric-criterion markdown-content">${this.renderMarkdown(rubric.criterion)}</div>
+                                    <div class="rubric-tags">
+                                        ${rubric.tags ? rubric.tags.map(tag => `<span class="rubric-tag">${tag}</span>`).join('') : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                return html;
+            }
+
+            renderModelSection(item, modelName, textData, imageData, textResult, imageResult) {
+                if (!textData && !imageData) {
+                    return '';
                 }
 
                 return `
                     <div class="model-section">
-                        <div class="model-header">
-                            <span>🤖 ${modelName}</span>
-                        </div>
-                        <div class="model-content">
-                            ${textData ? `<div class="model-text markdown-content">${this.renderMarkdown(textData)}</div>` : ''}
-                            ${images.length > 0 ? `
-                                <div class="model-images">
-                                    ${images.map((img, index) => `
-                                        <div class="model-image">
-                                            <img src="${img}" alt="${modelName} 输出图片 ${index + 1}" class="image-clickable" onclick="openModal('${img}')" loading="lazy">
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
-                            
-                            ${this.renderModelResults(textResult, imageResult)}
-                        </div>
+                        <div class="model-header">🤖 ${modelName} 输出</div>
+                        ${textData ? `<div class="model-text markdown-content">${this.renderMarkdown(textData)}</div>` : ''}
+                        ${this.renderModelImages(imageData)}
+                        ${this.renderModelResults(textResult, imageResult)}
+                    </div>
+                `;
+            }
+
+            renderModelImages(imageData) {
+                if (!imageData) return '';
+
+                // 处理字符串和数组格式
+                const images = Array.isArray(imageData) ? imageData : [imageData];
+                
+                return `
+                    <div class="model-images">
+                        ${images.map(img => `
+                            <div class="model-image">
+                                <img src="${img}" alt="模型输出图片" class="image-clickable" onclick="openModal('${img}')" onerror="this.style.display='none'">
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             }
 
             renderModelResults(textResult, imageResult) {
-                let resultsHtml = '';
+                if (!textResult && !imageResult) return '';
+
+                let html = '<div class="model-results">';
                 
                 if (textResult && textResult.length > 0) {
-                    resultsHtml += `
-                        <div class="model-results">
-                            <div class="results-header">📊 文本评分结果</div>
-                            <div class="results-content">
-                                ${textResult.map(result => `
-                                    <div class="result-item ${result.criteria_met ? 'passed' : 'failed'}">
-                                        <span class="result-icon">${result.criteria_met ? '✅' : '❌'}</span>
-                                        <span class="result-criterion markdown-content">${this.renderMarkdown(result.criterion)}</span>
-                                    </div>
-                                `).join('')}
+                    html += `
+                        <div class="results-header">文本评估结果</div>
+                        ${textResult.map(result => `
+                            <div class="result-item ${result.criteria_met ? 'passed' : 'failed'}">
+                                ${result.criteria_met ? '✅' : '❌'} <span class="markdown-content">${this.renderMarkdown(result.criterion)}</span>
                             </div>
-                        </div>
+                        `).join('')}
                     `;
                 }
-                
+
                 if (imageResult && imageResult.length > 0) {
-                    resultsHtml += `
-                        <div class="model-results">
-                            <div class="results-header">📊 图像评分结果</div>
-                            <div class="results-content">
-                                ${imageResult.map(result => `
-                                    <div class="result-item ${result.criteria_met ? 'passed' : 'failed'}">
-                                        <span class="result-icon">${result.criteria_met ? '✅' : '❌'}</span>
-                                        <span class="result-criterion markdown-content">${this.renderMarkdown(result.criterion)}</span>
-                                    </div>
-                                `).join('')}
+                    html += `
+                        <div class="results-header">图像评估结果</div>
+                        ${imageResult.map(result => `
+                            <div class="result-item ${result.criteria_met ? 'passed' : 'failed'}">
+                                ${result.criteria_met ? '✅' : '❌'} <span class="markdown-content">${this.renderMarkdown(result.criterion)}</span>
                             </div>
-                        </div>
+                        `).join('')}
                     `;
                 }
-                
-                return resultsHtml;
+
+                html += '</div>';
+                return html;
             }
 
             renderRubrics(rubrics, title) {
@@ -1317,10 +1250,10 @@
             }
 
             getReviewStatus(itemId) {
-                const review = this.reviewData[itemId];
+                const review = this.reviews[itemId];
                 if (!review) return 'pending';
-                if (review.status === 'approved') return 'approved';
-                if (review.status === 'rejected') return 'rejected';
+                if (review.approved) return 'approved';
+                if (review.rejected) return 'rejected';
                 return 'pending';
             }
 
@@ -1355,21 +1288,15 @@
             }
 
             approveItem(itemId) {
-                if (!this.reviewData[itemId]) {
-                    this.reviewData[itemId] = { status: 'pending', score: 0, comment: '' };
-                }
-                this.reviewData[itemId].status = 'approved';
-                this.saveReviewData();
+                this.reviews[itemId] = { approved: true, rejected: false, timestamp: new Date().toISOString() };
+                this.saveReviews();
                 this.updateItemStatus(itemId);
                 this.updateStats();
             }
 
             rejectItem(itemId) {
-                if (!this.reviewData[itemId]) {
-                    this.reviewData[itemId] = { status: 'pending', score: 0, comment: '' };
-                }
-                this.reviewData[itemId].status = 'rejected';
-                this.saveReviewData();
+                this.reviews[itemId] = { approved: false, rejected: true, timestamp: new Date().toISOString() };
+                this.saveReviews();
                 this.updateItemStatus(itemId);
                 this.updateStats();
             }
@@ -1383,96 +1310,80 @@
 
             updateStats() {
                 const total = this.data.length;
-                const approved = Object.values(this.reviewData).filter(item => item.status === 'approved').length;
-                const rejected = Object.values(this.reviewData).filter(item => item.status === 'rejected').length;
-                const pending = total - approved - rejected;
-                const progress = total > 0 ? ((approved + rejected) / total) * 100 : 0;
+                const pending = this.data.filter(item => this.getReviewStatus(item.id) === 'pending').length;
+                const approved = this.data.filter(item => this.getReviewStatus(item.id) === 'approved').length;
+                const rejected = this.data.filter(item => this.getReviewStatus(item.id) === 'rejected').length;
 
-                document.getElementById('totalItems').textContent = total;
-                document.getElementById('approvedItems').textContent = approved;
-                document.getElementById('rejectedItems').textContent = rejected;
-                document.getElementById('pendingItems').textContent = pending;
-                document.getElementById('progressFill').style.width = `${progress}%`;
+                document.getElementById('total-count').textContent = total;
+                document.getElementById('pending-count').textContent = pending;
+                document.getElementById('approved-count').textContent = approved;
+                document.getElementById('rejected-count').textContent = rejected;
             }
 
-            loadReviewData() {
-                const saved = localStorage.getItem('artReviewData');
-                return saved ? JSON.parse(saved) : {};
+            loadReviews() {
+                try {
+                    const saved = localStorage.getItem('art-reviews');
+                    return saved ? JSON.parse(saved) : {};
+                } catch (error) {
+                    console.error('加载审核记录失败:', error);
+                    return {};
+                }
             }
 
-            saveReviewData() {
-                localStorage.setItem('artReviewData', JSON.stringify(this.reviewData));
+            saveReviews() {
+                try {
+                    localStorage.setItem('art-reviews', JSON.stringify(this.reviews));
+                } catch (error) {
+                    console.error('保存审核记录失败:', error);
+                }
             }
 
             exportResults() {
-                // 准备导出数据
-                const exportData = {
-                    exportTime: new Date().toISOString(),
-                    totalItems: this.data.length,
-                    statistics: {
-                        approved: Object.values(this.reviewData).filter(item => item.status === 'approved').length,
-                        rejected: Object.values(this.reviewData).filter(item => item.status === 'rejected').length,
-                        pending: this.data.length - Object.values(this.reviewData).filter(item => item.status === 'approved').length - Object.values(this.reviewData).filter(item => item.status === 'rejected').length
-                    },
-                    reviews: []
-                };
-
-                // 为每个项目添加审核结果
-                this.data.forEach(item => {
-                    const reviewItem = this.reviewData[item.id] || { status: 'pending', score: 0, comment: '' };
-                    exportData.reviews.push({
+                const results = this.data.map(item => {
+                    const review = this.reviews[item.id] || {};
+                    return {
                         id: item.id,
                         prompt: item.prompt,
-                        status: reviewItem.status,
-                        score: reviewItem.score,
-                        comment: reviewItem.comment,
-                        reviewTime: new Date().toISOString()
-                    });
+                        task_type: item.task_type,
+                        approved: review.approved || false,
+                        rejected: review.rejected || false,
+                        timestamp: review.timestamp || null
+                    };
                 });
 
-                // 创建并下载文件
-                const dataStr = JSON.stringify(exportData, null, 2);
-                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(dataBlob);
-                
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `art_review_results_${new Date().toISOString().split('T')[0]}.json`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                // 导出JSON
+                const jsonData = JSON.stringify(results, null, 2);
+                this.downloadFile(jsonData, 'art_review_results.json', 'application/json');
 
-                // 同时导出CSV格式
-                this.exportCSV(exportData);
+                // 导出CSV
+                const csvData = this.convertToCSV(results);
+                this.downloadFile(csvData, 'art_review_results.csv', 'text/csv');
             }
 
-            exportCSV(data) {
-                const csvHeaders = ['ID', '状态', '评分', '评论', '提示词'];
-                const csvRows = [csvHeaders.join(',')];
+            convertToCSV(data) {
+                const headers = ['ID', 'Prompt', 'Task Type', 'Approved', 'Rejected', 'Timestamp'];
+                const rows = data.map(item => [
+                    item.id,
+                    `"${item.prompt.replace(/"/g, '""')}"`,
+                    item.task_type,
+                    item.approved,
+                    item.rejected,
+                    item.timestamp || ''
+                ]);
 
-                data.reviews.forEach(review => {
-                    const row = [
-                        review.id,
-                        review.status,
-                        review.score,
-                        `"${review.comment.replace(/"/g, '""')}"`, // 转义引号
-                        `"${review.prompt.replace(/"/g, '""')}"`   // 转义引号
-                    ];
-                    csvRows.push(row.join(','));
-                });
+                return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+            }
 
-                const csvContent = csvRows.join('\n');
-                const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const csvUrl = URL.createObjectURL(csvBlob);
-                
-                const csvLink = document.createElement('a');
-                csvLink.href = csvUrl;
-                csvLink.download = `art_review_results_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(csvLink);
-                csvLink.click();
-                document.body.removeChild(csvLink);
-                URL.revokeObjectURL(csvUrl);
+            downloadFile(content, filename, mimeType) {
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             }
         }
 
